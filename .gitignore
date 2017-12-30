@@ -30,3 +30,8 @@
 *.exe
 *.out
 *.app
+
+# Data and model
+misc/tensorflow-mnist/data
+misc/tensorflow-mnist/model
+

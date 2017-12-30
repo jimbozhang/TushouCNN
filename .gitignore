@@ -35,3 +35,5 @@
 misc/tensorflow-mnist/data
 misc/tensorflow-mnist/model
 
+# Python files
+.idea

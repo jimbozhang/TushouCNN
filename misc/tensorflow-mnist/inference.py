@@ -21,6 +21,7 @@ from __future__ import print_function
 
 import gzip
 import numpy as np
+from scipy import ndimage
 from six.moves import xrange  # pylint: disable=redefined-builtin
 
 WORK_DIRECTORY = 'data'
@@ -89,7 +90,7 @@ def do_padding(data, padding, weight_shape):
     return padded_data
 
 
-def fprop_conv2d(weights, biases, data, padding='SAME', strides=(1, 1, 1, 1)):
+def fprop_conv2d_naive(weights, biases, data, padding='SAME', strides=(1, 1, 1, 1)):
     assert strides == (1, 1, 1, 1)
     data = do_padding(data, padding, weights.shape)
 
@@ -114,6 +115,28 @@ def fprop_conv2d(weights, biases, data, padding='SAME', strides=(1, 1, 1, 1)):
     return out_data
 
 
+def fprop_conv2d_scipy(weights, biases, data, padding='SAME', strides=(1, 1, 1, 1)):
+    assert strides == (1, 1, 1, 1)
+    assert padding == 'SAME'
+
+    (batch_size, in_height, in_width, in_channel) = data.shape
+    (k_height, k_width, _, out_channel) = weights.shape
+    assert in_channel == weights.shape[2]
+    out_height = in_height
+    out_width = in_width
+
+    out_data = np.empty((batch_size, out_height, out_width, out_channel))
+    for i in xrange(batch_size):
+        for c in xrange(out_channel):
+            conv = np.zeros((out_height, out_width))
+            for ic in xrange(in_channel):
+                conv_kernel = weights[:, :, ic, c]
+                data_block = data[i, :, :, ic]
+                conv += ndimage.correlate(data_block, conv_kernel, mode='constant')
+            out_data[i, :, :, c] = conv + biases[c]
+    return out_data
+
+
 def fprop_relu(data):
     return np.maximum(data, 0)
 
@@ -134,7 +157,7 @@ def fprop_maxpool(data, ksize=(1, 2, 2, 1), strides=(1, 2, 2, 1)):
 
 
 def fprop_softmax(data):
-    return np.exp(data)/np.sum(np.exp(data), axis=0)
+    return data
 
 
 def fprop_fc(weights, biases, data):
@@ -147,6 +170,7 @@ def fprop_fc(weights, biases, data):
 
 def predict(model, data):
     (conv1_weights, conv1_biases, conv2_weights, conv2_biases, fc1_weights, fc1_biases, fc2_weights, fc2_biases) = model
+    fprop_conv2d = fprop_conv2d_scipy
     out = fprop_conv2d(conv1_weights, conv1_biases, data)
     out = fprop_relu(out)
     out = fprop_maxpool(out)

@@ -90,6 +90,7 @@ def do_padding(data, padding, weight_shape):
 
 
 def fprop_conv2d(weights, biases, data, padding='SAME', strides=(1, 1, 1, 1)):
+    assert strides == (1, 1, 1, 1)
     data = do_padding(data, padding, weights.shape)
 
     (batch_size, in_height, in_width, in_channel) = data.shape
@@ -101,8 +102,8 @@ def fprop_conv2d(weights, biases, data, padding='SAME', strides=(1, 1, 1, 1)):
     out_data = np.empty((batch_size, out_height, out_width, out_channel))
     for i in xrange(batch_size):
         for c in xrange(out_channel):
-            for h in xrange(0, out_height, strides[1]):
-                for w in xrange(0, out_width, strides[2]):
+            for h in xrange(out_height):
+                for w in xrange(out_width):
                     conv = 0.0
                     for ic in xrange(in_channel):
                         conv_kernel = weights[:, :, ic, c]
@@ -133,12 +134,14 @@ def fprop_maxpool(data, ksize=(1, 2, 2, 1), strides=(1, 2, 2, 1)):
 
 
 def fprop_softmax(data):
-    out = data
-    return out
+    return np.exp(data)/np.sum(np.exp(data), axis=0)
 
 
 def fprop_fc(weights, biases, data):
-    out = data
+    data = data.reshape((data.shape[0], int(data.size / data.shape[0] + 0.5)))
+    assert data.shape[1] == weights.shape[0]
+    out = np.matmul(data, weights)
+    out = out + biases
     return out
 
 

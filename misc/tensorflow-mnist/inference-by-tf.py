@@ -20,7 +20,7 @@ from __future__ import division
 from __future__ import print_function
 
 import gzip
-import numpy
+import numpy as np
 from six.moves import xrange  # pylint: disable=redefined-builtin
 import tensorflow as tf
 
@@ -31,14 +31,13 @@ PIXEL_DEPTH = 255
 NUM_LABELS = 10
 EVAL_BATCH_SIZE = 64
 
-FLAGS = None
 
 def extract_data(filename, num_images):
     print('Extracting', filename)
     with gzip.open(filename) as bytestream:
         bytestream.read(16)
         buf = bytestream.read(IMAGE_SIZE * IMAGE_SIZE * num_images * NUM_CHANNELS)
-        data = numpy.frombuffer(buf, dtype=numpy.uint8).astype(numpy.float32)
+        data = np.frombuffer(buf, dtype=np.uint8).astype(np.float32)
         data = (data - (PIXEL_DEPTH / 2.0)) / PIXEL_DEPTH
         data = data.reshape(num_images, IMAGE_SIZE, IMAGE_SIZE, NUM_CHANNELS)
         return data
@@ -49,32 +48,34 @@ def extract_labels(filename, num_images):
     with gzip.open(filename) as bytestream:
         bytestream.read(8)
         buf = bytestream.read(1 * num_images)
-        labels = numpy.frombuffer(buf, dtype=numpy.uint8).astype(numpy.int64)
+        labels = np.frombuffer(buf, dtype=np.uint8).astype(np.int64)
     return labels
+
 
 def error_rate(predictions, labels):
     return 100.0 - (
             100.0 *
-            numpy.sum(numpy.argmax(predictions, 1) == labels) /
+            np.sum(np.argmax(predictions, 1) == labels) /
             predictions.shape[0])
 
+
 def load_model(modeldir):
-    variables = []
-    variables.append(numpy.loadtxt(modeldir + '/0_conv1_weights', 'float32').reshape([5, 5, NUM_CHANNELS, 32]))
-    variables.append(numpy.loadtxt(modeldir + '/1_conv1_biases', 'float32').reshape([32]))
-    variables.append(numpy.loadtxt(modeldir + '/2_conv2_weights', 'float32').reshape([5, 5, 32, 64]))
-    variables.append(numpy.loadtxt(modeldir + '/3_conv2_biases', 'float32').reshape([64]))
-    variables.append(numpy.loadtxt(modeldir + '/4_fc1_weights', 'float32').reshape([IMAGE_SIZE // 4 * IMAGE_SIZE // 4 * 64, 512]))
-    variables.append(numpy.loadtxt(modeldir + '/5_fc1_biases', 'float32').reshape([512]))
-    variables.append(numpy.loadtxt(modeldir + '/6_fc2_weights', 'float32').reshape([512, NUM_LABELS]))
-    variables.append(numpy.loadtxt(modeldir + '/7_fc2_biases', 'float32').reshape([NUM_LABELS]))
-    return variables
+    return (np.loadtxt(modeldir + '/0_conv1_weights', 'float32').reshape([5, 5, NUM_CHANNELS, 32]),
+            np.loadtxt(modeldir + '/1_conv1_biases', 'float32').reshape([32]),
+            np.loadtxt(modeldir + '/2_conv2_weights', 'float32').reshape([5, 5, 32, 64]),
+            np.loadtxt(modeldir + '/3_conv2_biases', 'float32').reshape([64]),
+            np.loadtxt(modeldir + '/4_fc1_weights', 'float32').reshape(
+                [IMAGE_SIZE // 4 * IMAGE_SIZE // 4 * 64, 512]),
+            np.loadtxt(modeldir + '/5_fc1_biases', 'float32').reshape([512]),
+            np.loadtxt(modeldir + '/6_fc2_weights', 'float32').reshape([512, NUM_LABELS]),
+            np.loadtxt(modeldir + '/7_fc2_biases', 'float32').reshape([NUM_LABELS]))
 
-if __name__ == '__main__':
-    [conv1_weights, conv1_biases, conv2_weights, conv2_biases,
-     fc1_weights , fc1_biases, fc2_weights, fc2_biases] = load_model('model')
 
-    def model(data, train=False):
+def main():
+    (conv1_weights, conv1_biases, conv2_weights, conv2_biases,
+     fc1_weights, fc1_biases, fc2_weights, fc2_biases) = load_model('model')
+
+    def model(data):
         conv = tf.nn.conv2d(data, conv1_weights, strides=[1, 1, 1, 1], padding='SAME')
         relu = tf.nn.relu(tf.nn.bias_add(conv, conv1_biases))
         pool = tf.nn.max_pool(relu, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
@@ -98,7 +99,7 @@ if __name__ == '__main__':
         size = data.shape[0]
         if size < EVAL_BATCH_SIZE:
             raise ValueError("batch size for evals larger than dataset: %d" % size)
-        predictions = numpy.ndarray(shape=(size, NUM_LABELS), dtype=numpy.float32)
+        predictions = np.ndarray(shape=(size, NUM_LABELS), dtype=np.float32)
         for begin in xrange(0, size, EVAL_BATCH_SIZE):
             end = begin + EVAL_BATCH_SIZE
             if end <= size:
@@ -116,3 +117,7 @@ if __name__ == '__main__':
         tf.global_variables_initializer().run()
         test_error = error_rate(eval_in_batches(test_data, sess), test_labels)
         print('Test error: %.1f%%' % test_error)
+
+
+if __name__ == '__main__':
+    main()

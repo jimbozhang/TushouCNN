@@ -73,11 +73,11 @@ def load_model(modeldir):
 def do_padding(data, padding, weight_shape):
     if padding == 'VALID':
         return data
-    assert(padding == 'SAME')
+    assert padding == 'SAME'
     p_h = int(weight_shape[0] / 2)
     p_w = int(weight_shape[1] / 2)
 
-    assert(len(data.shape) == 4)
+    assert len(data.shape) == 4
     padded_data_shape = list(data.shape)
     padded_data_shape[1] += p_h * 2
     padded_data_shape[2] += p_w * 2
@@ -86,24 +86,17 @@ def do_padding(data, padding, weight_shape):
     for i in xrange(len(data)):
         img = np.lib.pad(data[i], ((p_h, p_h), (p_w, p_w), (0, 0)), 'constant')
         padded_data[i] = img
-
     return padded_data
 
 
 def fprop_conv2d(weights, biases, data, padding='SAME', strides=(1, 1, 1, 1)):
-    assert(len(data.shape) == 4)
-    assert(len(weights.shape) == 4)
     data = do_padding(data, padding, weights.shape)
 
-    batch_size = data.shape[0]
-    in_height = data.shape[1]
-    in_width = data.shape[2]
-    in_channel = data.shape[3]
-    kernel_height = weights.shape[0]
-    kernel_width = weights.shape[1]
-    out_channel = weights.shape[3]
-    out_height = in_height - kernel_height + 1
-    out_width = in_width - kernel_width + 1
+    (batch_size, in_height, in_width, in_channel) = data.shape
+    (k_height, k_width, _, out_channel) = weights.shape
+    assert in_channel == weights.shape[2]
+    out_height = in_height - k_height + 1
+    out_width = in_width - k_width + 1
 
     out_data = np.empty((batch_size, out_height, out_width, out_channel))
     for i in xrange(batch_size):
@@ -111,24 +104,32 @@ def fprop_conv2d(weights, biases, data, padding='SAME', strides=(1, 1, 1, 1)):
             for h in xrange(0, out_height, strides[1]):
                 for w in xrange(0, out_width, strides[2]):
                     conv = 0.0
-                    for ic in range(in_channel):
+                    for ic in xrange(in_channel):
                         conv_kernel = weights[:, :, ic, c]
-                        data_block = data[i, h:h+kernel_height, w:w+kernel_width, ic]
+                        data_block = data[i, h:h+k_height, w:w+k_width, ic]
                         assert conv_kernel.shape == data_block.shape
                         conv += np.inner(data_block.reshape((-1)), conv_kernel.reshape((-1)))
-                    out_data[i][h][w][c] = conv
-
+                    out_data[i, h, w, c] = conv + biases[c]
     return out_data
 
 
 def fprop_relu(data):
-    out = data
-    return out
+    return np.maximum(data, 0)
 
 
-def fprop_maxpool(data):
-    out = data
-    return out
+def fprop_maxpool(data, ksize=(1, 2, 2, 1), strides=(1, 2, 2, 1)):
+    out_data = np.empty([int(data.shape[i] / strides[i]) for i in xrange(len(data.shape))])
+    for i0 in xrange(out_data.shape[0]):
+        for i1 in xrange(out_data.shape[1]):
+            for i2 in xrange(out_data.shape[2]):
+                for i3 in xrange(out_data.shape[3]):
+                    j0 = i0 * strides[0]
+                    j1 = i1 * strides[1]
+                    j2 = i2 * strides[2]
+                    j3 = i3 * strides[3]
+                    data_block = data[j0:j0+ksize[0], j1:j1+ksize[1], j2:j2+ksize[2], j3:j3+ksize[3]]
+                    out_data[i0, i1, i2, i3] = np.max(data_block)
+    return out_data
 
 
 def fprop_softmax(data):

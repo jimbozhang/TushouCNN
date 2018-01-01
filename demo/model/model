@@ -1,0 +1,48 @@
+binary false
+layer conv
+  kernel_h 5
+  hernel_w 5
+  channel_in 1
+  chanel_out 32
+  weights conv1_weights
+  biases conv1_biases
+layer relu
+layer maxpool
+  kernel_channel_in 1
+  kernel_h 2
+  kernel_w 2
+  kernel_channel_out 1
+  stride_channel_in 1
+  stride_h 2
+  stride_w 2
+  stride_channel_out 1
+layer conv
+  kernel_h 5
+  hernel_w 5
+  channel_in 32
+  chanel_out 64
+  weights conv2_weights
+  biases conv2_biases
+layer relu
+layer maxpool
+  kernel_channel_in 1
+  kernel_h 2
+  kernel_w 2
+  kernel_channel_out 1
+  stride_channel_in 1
+  stride_h 2
+  stride_w 2
+  stride_channel_out 1
+layer fc
+  in 3128
+  out 512
+  weight fc1_weights
+  biases fc1_biases
+layer relu
+layer fc
+  in 512
+  out 10
+  weight fc2_weights
+  biases fc2_biases
+layer softmax
+  log false

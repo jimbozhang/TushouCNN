@@ -1,2 +1,2 @@
 all:
-	g++ -g -o demo demo.cc
+	g++ -g -I../tushoucnn -o demo demo.cc

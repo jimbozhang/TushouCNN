@@ -1,4 +1,3 @@
-binary false
 layer conv
   kernel_h 5
   hernel_w 5

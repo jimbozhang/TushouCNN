@@ -13,9 +13,22 @@
 // See the Apache 2 License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TUSHOUCNN_TUSHOU_CNN_H
-#define TUSHOUCNN_TUSHOU_CNN_H
+#ifndef TUSHOUCNN_BASE_TYPES_H
+#define TUSHOUCNN_BASE_TYPES_H
 
-#include "base/nn.h"
+#include <string>
+#include <vector>
+#include <map>
 
-#endif // TUSHOUCNN_TUSHOU_CNN_H
+namespace tushoucnn {
+
+typedef float FeatType;
+typedef int LabelType;
+
+struct Layer {
+  std::string type;
+  std::map<std::string, std::string> hparams;
+};
+
+} // namespace tushoucnn
+#endif // TUSHOUCNN_BASE_TYPES_H_

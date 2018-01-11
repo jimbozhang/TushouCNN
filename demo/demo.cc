@@ -56,7 +56,14 @@ float eval_data(vector<vector<float> > &test_data, vector<int> &ref_labels) {
 
   int correct_num = 0;
   for (size_t i = 0; i < test_data.size(); i++) {
-    int predict_result = nn.predict(test_data[i]);
+    Tensor image(test_data[i]);
+    Shape image_shape;
+    image_shape.push_back(1);
+    image_shape.push_back(28);
+    image_shape.push_back(28);
+    image_shape.push_back(1);
+    image.Reshape(image_shape);
+    int predict_result = nn.predict(image);
     if (predict_result == ref_labels[i])
       correct_num++;
   }

@@ -25,10 +25,5 @@ namespace tushoucnn {
 typedef float FeatType;
 typedef int LabelType;
 
-struct Layer {
-  std::string type;
-  std::map<std::string, std::string> hparams;
-};
-
 } // namespace tushoucnn
 #endif // TUSHOUCNN_BASE_TYPES_H_

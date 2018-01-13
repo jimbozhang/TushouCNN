@@ -18,12 +18,19 @@
 
 #include "base/types.h"
 #include "base/tensor.h"
+#include "layer/trainable_layers.h"
+#include "layer/static_layers.h"
 
 namespace tushoucnn {
 
 class NN {
 public:
   NN() {}
+  ~NN() {
+    for (auto l = layers_.begin(); l < layers_.end(); ++l) {
+      delete *l;
+    }
+  }
 
   void load_model(std::string model_dir, bool binary = false) {
     std::string model_file = model_dir + "/model";
@@ -34,30 +41,25 @@ public:
     else {
       std::ifstream fin;
       fin.open(model_file.c_str());
-      Layer *cur_layer = NULL;
+      LayerHParams hparam;
+      std::string layer_type;
       while (! fin.eof()) {
-        std::string tok_key, tok_val;
+        std::string tok_key;
         fin >> tok_key;
-        fin >> tok_val;
-        if (tok_key == "layer") {
-          // new layer
-          if (cur_layer != NULL) {
-            layers_.push_back(*cur_layer);
-            delete cur_layer;
-          }
-          cur_layer = new Layer;
-          cur_layer->type = tok_val;
+        if (tok_key == "{") {
+          hparam.clear();
+        }
+        else if (tok_key == "}") {
+          assert(hparam.size() > 0);
+          Layer *layer = new_layer(hparam);
+          layers_.push_back(layer);
         }
         else {
-          // this layer
-          assert(cur_layer != NULL);
-          cur_layer->hparams[tok_key] = tok_val;
+          std::string tok_val;
+          fin >> tok_val;
+          hparam[tok_key] = tok_val;
         }
-     }
-     if (cur_layer != NULL) {
-       layers_.push_back(*cur_layer);
-       delete cur_layer;
-     }
+      }
      fin.close();
     }
   }
@@ -65,17 +67,41 @@ public:
   LabelType predict(Tensor &feats) {
     Tensor out = feats;
     for (auto l = layers_.begin(); l < layers_.end(); ++l) {
-      out = Fprop(*l, out);
+      out = (*l)->fprop(out);
     }
     return 7;  // lucky number
   }
 
 private:
-  std::vector<Layer> layers_;
+  std::vector<Layer *> layers_;
 
-  // TODO: let Fprop() as layer's member function
-  Tensor & Fprop(Layer &layer, Tensor &data) {
-    return data;
+  Layer *new_layer(LayerHParams &param) {
+    Layer *layer = NULL;
+    if (param["layer_type"] == "fc") {
+      layer = new FullyConnectedLayer();
+    }
+    else if (param["layer_type"] == "conv") {
+      layer = new ConvolutionalLayer();
+    }
+    else if (param["layer_type"] == "relu") {
+      layer = new ReluLayer();
+    }
+    else if (param["layer_type"] == "maxpool") {
+      layer = new MaxPollingLayer();
+    }
+    else if (param["layer_type"] == "softmax") {
+      layer = new SoftmaxLayer();
+    }
+    else if (param["layer_type"] == "conv") {
+      layer = new ConvolutionalLayer();
+    }
+    else {
+      std::cerr << "Unsupported layer type." << std::endl;
+      assert(false); 
+    }
+    layer->load_hparams(param);
+
+    return layer;
   }
 };
 

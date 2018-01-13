@@ -13,42 +13,31 @@
 // See the Apache 2 License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TUSHOUCNN_BASE_TENSOR_H
-#define TUSHOUCNN_BASE_TENSOR_H
+#ifndef TUSHOUCNN_LAYER_LAYER_H
+#define TUSHOUCNN_LAYER_LAYER_H
+
+#include <string>
+#include <vector>
+#include <map>
+#include "base/tensor.h"
 
 namespace tushoucnn {
 
-typedef std::vector<int> Shape;
+typedef std::map<std::string, std::string> LayerHParams;
 
-class Tensor {
+class Layer {
 public:
-  Tensor() {}
-  Tensor(std::vector<FeatType> &v) {
-    data_ = v;
-    shape_.push_back(v.size());
+  virtual Tensor &fprop(Tensor &data) {
+    return data;
   }
 
-  void reshape(Shape &shape) {
-    int size = 1;
-    for (auto it = shape.begin(); it < shape.end(); ++it) {
-      size *= *it;
-    }
-    assert(size == data_.size());
-    shape_ = shape;
-  }
-
-  Shape & get_shape() {
-    return shape_;
-  }
-
-  size_t get_size() {
-    return data_.size();
+  void load_hparams(LayerHParams &hparams) {
+    hparams_ = hparams;
   }
 
 private:
-  std::vector<FeatType> data_;
-  Shape shape_;
+  LayerHParams hparams_;
 };
 
 } // namespace tushoucnn
-#endif // TUSHOUCNN_BASE_TENSOR_H_
+#endif // TUSHOUCNN_LAYER_LAYER_H_

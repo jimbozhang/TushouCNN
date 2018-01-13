@@ -62,7 +62,7 @@ float eval_data(vector<vector<float> > &test_data, vector<int> &ref_labels) {
     image_shape.push_back(28);
     image_shape.push_back(28);
     image_shape.push_back(1);
-    image.Reshape(image_shape);
+    image.reshape(image_shape);
     int predict_result = nn.predict(image);
     if (predict_result == ref_labels[i])
       correct_num++;

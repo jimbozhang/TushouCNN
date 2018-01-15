@@ -41,6 +41,7 @@ public:
     else {
       std::ifstream fin;
       fin.open(model_file.c_str());
+      assert(fin.is_open());
       LayerHParams hparam;
       std::string layer_type;
       while (! fin.eof()) {
@@ -57,6 +58,9 @@ public:
         else {
           std::string tok_val;
           fin >> tok_val;
+          if (tok_key == std::string("weights") || tok_key == std::string("biases")) {
+            tok_val = model_dir + "/" + tok_val;
+          }
           hparam[tok_key] = tok_val;
         }
       }
@@ -100,6 +104,7 @@ private:
       assert(false); 
     }
     layer->load_hparams(param);
+    layer->load_params();
 
     return layer;
   }

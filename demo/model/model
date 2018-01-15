@@ -3,7 +3,7 @@
     kernel_h 5
     hernel_w 5
     channel_in 1
-    chanel_out 32
+    channel_out 32
     weights conv1_weights
     biases conv1_biases
 }
@@ -26,7 +26,7 @@
     kernel_h 5
     hernel_w 5
     channel_in 32
-    chanel_out 64
+    channel_out 64
     weights conv2_weights
     biases conv2_biases
 }
@@ -46,9 +46,9 @@
 }
 {
   layer_type fc
-    in 3128
+    in 3136
     out 512
-    weight fc1_weights
+    weights fc1_weights
     biases fc1_biases
 }
 {
@@ -58,7 +58,7 @@
   layer_type fc
     in 512
     out 10
-    weight fc2_weights
+    weights fc2_weights
     biases fc2_biases
 }
 {

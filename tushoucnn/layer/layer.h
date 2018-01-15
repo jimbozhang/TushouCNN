@@ -35,8 +35,26 @@ public:
     hparams_ = hparams;
   }
 
-private:
+  virtual void load_params() {}
+
+protected:
   LayerHParams hparams_;
+
+  std::vector<FeatType> read_params_file(std::string key) {
+    std::vector<FeatType> params;
+    if (hparams_.find(key) != hparams_.end()) {
+      std::ifstream fin;
+      fin.open(hparams_[key].c_str());
+      assert(fin.is_open());
+      while (! fin.eof()) {
+        FeatType tok;
+        fin >> tok;
+        params.push_back(tok);
+      }
+      fin.close();
+    }
+    return params;
+  }
 };
 
 } // namespace tushoucnn

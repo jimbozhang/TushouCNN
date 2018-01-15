@@ -30,12 +30,38 @@ public:
   Tensor &fprop(Tensor &data) {
     return data;
   }
+
+  void load_params() {
+    int in_size = std::stoi(hparams_["in"]);
+    int out_size = std::stoi(hparams_["out"]);
+    int size = in_size * out_size;
+    std::vector<FeatType> weights = read_params_file("weights");
+    assert(weights.size() >= size);
+    weights.resize(size);
+    std::vector<FeatType> biases = read_params_file("biases");
+    assert(biases.size() >= out_size);
+    biases.resize(out_size);
+  }
 };
 
 class ConvolutionalLayer : public Layer {
 public:
   Tensor &fprop(Tensor &data) {
     return data;
+  }
+
+  void load_params() {
+    int kh = std::stoi(hparams_["kernel_h"]);
+    int kw = std::stoi(hparams_["hernel_w"]);
+    int ci = std::stoi(hparams_["channel_in"]);
+    int co = std::stoi(hparams_["channel_out"]);
+    int size = kh * kw * ci * co;
+    std::vector<FeatType> weights = read_params_file("weights");
+    assert(weights.size() >= size);
+    weights.resize(size);
+    std::vector<FeatType> biases = read_params_file("biases");
+    assert(biases.size() >= co);
+    biases.resize(co);
   }
 };
 
